@@ -73,16 +73,24 @@ public class CreateTestFiles {
 		HashMap<String, Integer> newMap = new HashMap<String, Integer>();
 		HashMap<String, Integer> mapTestCaseFile = new HashMap<String, Integer>();
 		Iterator itParsedFieldsMap = parsedFieldsMap.entrySet().iterator();
-		Iterator itmapTestCaseFile = parsedFieldsMap.entrySet().iterator();
+		Iterator itMapTestCaseFile = parsedFieldsMap.entrySet().iterator();
 		
 		String[] parsedFields = br.readLine().split("=");
 		for(int i = 0; i <= parsedFields.length - 1; i++){
 			mapTestCaseFile.put(parsedFields[0], i);
 		}
+		
 		while(itParsedFieldsMap.hasNext()) {
-			Map.Entry<String, Integer>pair = (Map.Entry)itParsedFieldsMap.next();
-			String parsedFieldKey = pair.getKey();
+			Map.Entry<String, Integer>pairParsedFields = (Map.Entry)itParsedFieldsMap.next();
+			String parsedFieldKey = pairParsedFields.getKey();
 			
+			while(itMapTestCaseFile.hasNext()) {
+				Map.Entry<String, Integer>pairTestCase = (Map.Entry)itMapTestCaseFile.next();
+				String testCaseKey = pairTestCase.getKey();
+				if(parsedFieldKey.equals(testCaseKey)){
+					newMap.put(parsedFieldKey, pairTestCase.getValue());
+				}
+			}
 		}
 		
 		return newMap;

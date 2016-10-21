@@ -1,15 +1,9 @@
 import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class CreateTestFiles {
@@ -23,82 +17,67 @@ public class CreateTestFiles {
 		
 	}
 	
-	public HashMap<String, Integer> parseFields(String filePath, boolean header, String delimiter) throws IOException{
+	public HashMap<String, String> parseFields(String filePath, String delimiter) throws IOException{
 		br = new BufferedReader(new FileReader(filePath));
-		String[] parsedFields;
-		HashMap<String, Integer> map = new HashMap<String, Integer>();
+		String parsedFields;
+		String[] column = null;
+		String[] value = null;
+		int line = 0;
+		LinkedHashMap<String, String> map = new LinkedHashMap<String,String>();
 		
-		if(header == true) {
-			parsedFields = br.readLine().split(delimiter);
-			for(int i = 0; i <= parsedFields.length - 1; i++){
-				map.put(parsedFields[0], i);
+		while((parsedFields = br.readLine()) != null) {
+			if(line == 0) {
+				column = parsedFields.split(delimiter);
 			}
+			else if(line == 1) {
+				value = parsedFields.split(delimiter);
+			}
+			line++;
+		}
+		for(int i = 0; i <= column.length - 1; i++) {
+			map.put(column[i], value[i]);
 		}
 		return map;
 	}
-	
-	public void getParsedFields(String[] parsedFields) {
-		for(int i = 0; i <= parsedFields.length - 1; i++) {
-			System.out.println(parsedFields[i]);
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public void getParsedFields(HashMap<String, String> map) {
+		Iterator iter = map.entrySet().iterator();
+		
+		while(iter.hasNext()) {
+			Map.Entry<String, String>pair = (Map.Entry)iter.next();
+			String key = pair.getKey();
+			String value = pair.getValue();
+			
+			System.out.println("Key:" + key + "\n Value:" + value);
 		}
 	}
 	
-	public HashMap<String, Integer> generateFile(String testFilePath, HashMap<String, Integer> parsedFieldsMap, String testCaseFilePath) throws IOException{
-		/** br = new BufferedReader(new FileReader(testCaseFilePath));
-		InputStream input = new FileInputStream(testFilePath);
-		OutputStream output;
-		String currentLineTestCase;
-		String currentLineNewFile;
-		Iterator it = parsedFieldsMap.entrySet().iterator();
-
-		while((currentLineTestCase = br.readLine()) != null) {
-			String[] parsedString = currentLineTestCase.trim().split("=");
-			String fieldName = parsedString[0];
-			String value = parsedString[1];
-			output = new FileOutputStream(fieldName + "_" + value);
-			BufferedReader brOutput = new BufferedReader(new FileReader(output.toString()));
-			
-			while((currentLineNewFile = brOutput.readLine()) != null) {
-				while(it.hasNext()) {
-					Map.Entry<String, Integer>pair = (Map.Entry)it.next();
-					
-					currentLineNewFile.replace();
-					
-					pair.getKey();
-					pair.getValue();
-				}
-			}
-		} **/
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public void generateFiles(HashMap<String, String> map, String testCaseFilePath) throws IOException {
 		br = new BufferedReader(new FileReader(testCaseFilePath));
-		HashMap<String, Integer> newMap = new HashMap<String, Integer>();
-		HashMap<String, Integer> mapTestCaseFile = new HashMap<String, Integer>();
-		Iterator itParsedFieldsMap = parsedFieldsMap.entrySet().iterator();
-		Iterator itMapTestCaseFile = parsedFieldsMap.entrySet().iterator();
+		String parsedTestCase;
 		
-		String[] parsedFields = br.readLine().split("=");
-		for(int i = 0; i <= parsedFields.length - 1; i++){
-			mapTestCaseFile.put(parsedFields[0], i);
-		}
-		
-		while(itParsedFieldsMap.hasNext()) {
-			Map.Entry<String, Integer>pairParsedFields = (Map.Entry)itParsedFieldsMap.next();
-			String parsedFieldKey = pairParsedFields.getKey();
+		while((parsedTestCase = br.readLine()) != null) {
+			String field = parsedTestCase.split("=")[0];
+			String value = parsedTestCase.split("=")[1];
 			
-			while(itMapTestCaseFile.hasNext()) {
-				Map.Entry<String, Integer>pairTestCase = (Map.Entry)itMapTestCaseFile.next();
-				String testCaseKey = pairTestCase.getKey();
-				if(parsedFieldKey.equals(testCaseKey)){
-					newMap.put(parsedFieldKey, pairTestCase.getValue());
+			Iterator iter = map.entrySet().iterator();
+			while(iter.hasNext()) {
+				Map.Entry<String, String>pair = (Map.Entry)iter.next();
+				if(pair.getKey().equals(field)){
+					System.out.println("Found field \n Old Value:" + pair.getValue());
+					pair.setValue(value);
+					System.out.println(" New Value:" + pair.getValue());
 				}
 			}
+			
 		}
-		
-		return newMap;
 	}
 
 	public static void main(String args[]) throws IOException{
 		CreateTestFiles ctf = new CreateTestFiles();
-		String[] parsedFields = ctf.parseFields("C:/Users/david_him/Documents/Projects/AARP/nuance.std.in.20161019David.dat", true, "\\|");
-		ctf.getParsedFields(parsedFields);
+		HashMap<String, String> parsedFields = ctf.parseFields("C:/Users/david_him/Documents/Projects/AARP/nuance.std.in.20161019David.dat", "\\|");
+		//ctf.getParsedFields(parsedFields);
+		ctf.generateFiles(parsedFields, "C:/Users/david_him/Documents/Projects/AARP/testCase.txt");
 	}
 }

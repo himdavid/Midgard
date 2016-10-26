@@ -1,15 +1,11 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -67,21 +63,7 @@ public class CreateTestFiles {
 		}
 		return map;
 	}
-	/** @SuppressWarnings({ "rawtypes", "unchecked" })
-	public void getParsedFields(HashMap<String, ColumnData> map) {
 
-		for(Map.Entry<String, ColumnData> entry: map.entrySet()){
-			//String key = entry.getKey();
-			ColumnData cd = entry.getValue();
-			String fieldName = cd.getFieldName();
-			int fieldIndex = cd.getIndex();
-			String value = cd.getValue();
-
-			System.out.println("fieldName:" + fieldName + "\n fieldIndex:" + fieldIndex+ "\n Value:" + value);
-		}
-	} **/
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	/**
 	 * Given a LinkedHashMap and a file containing test cases, if the key in the LinkedHashMap matches the field name
 	 * in the test case file, the value in the LinkedHashMap will be updated along with setting the createFile flat to True.
@@ -129,10 +111,11 @@ public class CreateTestFiles {
 		
 		File baseLineFile = new File(baseLineFilePath);
 		FileInputStream fips;
-		FileOutputStream fops;
+		FileOutputStream fops1;
+		FileOutputStream fops2;
 
 		for(Map.Entry<String, ColumnData> entry: map.entrySet()){
-			String key = entry.getKey();
+			//String key = entry.getKey();
 			ColumnData cd = entry.getValue();
 			String fieldName = cd.getFieldName();
 			int index = cd.getIndex();
@@ -143,26 +126,26 @@ public class CreateTestFiles {
 			String filePath = absolutePath.substring(0,absolutePath.lastIndexOf(baseLineFile.separator))+"/";
 
 			if(createFile == true) {
-
-				System.out.println();
+				File tempFile = new File(filePath+"tempfile.dat");
 				File testFile = new File(filePath+fileNameFormat.replace("[FieldName]", fieldName).replace("[Value]", value));
 				fips = new FileInputStream(baseLineFile);
-				fops = new FileOutputStream(testFile);
+				fops1 = new FileOutputStream(tempFile);
+				fops2 = new FileOutputStream(testFile);
 
-				System.out.println(testFile.getAbsolutePath());
+				System.out.println(tempFile.getAbsolutePath());
 				
 				byte[] buffer = new byte[1024];
 				int length;
 				while((length = fips.read(buffer)) > 0) {
-					fops.write(buffer, 0, length);
+					fops1.write(buffer, 0, length);
 				}
 				
-				BufferedReader br2 = new BufferedReader(new FileReader(testFile.getAbsolutePath()));
+				BufferedReader br1 = new BufferedReader(new FileReader(tempFile.getAbsolutePath()));
 				String parsedFields;
 				int line = 0;
 				String[] outputValues = null;
 				
-				while((parsedFields = br2.readLine()) != null) {
+				while((parsedFields = br1.readLine()) != null) {
 					
 					if(line == 1) {
 						outputValues = parsedFields.split(delimiter);
@@ -174,8 +157,26 @@ public class CreateTestFiles {
 
 				for(int i = 0; i < outputValues.length; i++){
 					String valueToWrite = outputValues[i] + "|";
-					fops.write(valueToWrite.getBytes());
+					fops1.write(valueToWrite.getBytes());
 				}
+				
+				BufferedReader br2 = new BufferedReader(new FileReader(tempFile.getAbsolutePath()));
+				
+				int lineCount=1;
+				String content;
+				while((content = br2.readLine()) != null){
+					if(lineCount != 2) {
+						content = content+"\n";
+						fops2.write(content.getBytes());
+					}
+					lineCount++;
+				}
+				fops1.close();
+				fops2.close();
+				br1.close();
+				br2.close();
+				System.out.println(tempFile.delete());
+				
 			}
 		}
 	}

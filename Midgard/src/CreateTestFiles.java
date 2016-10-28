@@ -1,11 +1,13 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,7 +36,7 @@ public class CreateTestFiles {
 	 * @return map, the LinkedHashMap.
 	 * @throws IOException
 	 */
-	public HashMap<String, ColumnData> parseFields(String filePath, String delimiter) throws IOException{
+	public HashMap<String, String> parseFieldsUpdated(String filePath, String delimiter) throws IOException{
 
 		this.delimiter = delimiter;
 
@@ -43,7 +45,7 @@ public class CreateTestFiles {
 		String[] column = null;
 		String[] value = null;
 		int line = 0;
-		LinkedHashMap<String, ColumnData> map = new LinkedHashMap<String,ColumnData>();
+		LinkedHashMap<String, String> map = new LinkedHashMap<String,String>();
 
 		while((parsedFields = br.readLine()) != null) {
 
@@ -56,10 +58,7 @@ public class CreateTestFiles {
 			line++;
 		}
 		for(int i = 0; i <= column.length - 1; i++) {
-
-			ColumnData cd = new ColumnData(column[i], value[i], i, false);
-
-			map.put(column[i], cd);
+			map.put(column[i], value[i]);
 		}
 		return map;
 	}
@@ -72,33 +71,18 @@ public class CreateTestFiles {
 	 * @return map, an updated LinkedHashMap with the updated test data
 	 * @throws IOException
 	 */
-	public HashMap<String, ColumnData>updateFieldValue(HashMap<String, ColumnData> map, String testCaseFilePath) throws IOException {
-		br = new BufferedReader(new FileReader(testCaseFilePath));
-		String parsedTestCase;
-
-		while((parsedTestCase = br.readLine()) != null) {
-			String field = parsedTestCase.split("=")[0];
-			String value = parsedTestCase.split("=")[1];
-
-			for(Map.Entry<String, ColumnData> entry: map.entrySet()){
-				String key = entry.getKey();
-				ColumnData cd = entry.getValue();
-				/** String fieldName = cd.getFieldName();
-				int fieldIndex = cd.getIndex();
-				String fieldValue = cd.getValue(); **/
-
-				if(key.equals(field)){
-					System.out.println("Found field \n" + " Field Name:" + cd.getFieldName() +  "\n Index:" + cd.getIndex() + "\n Old Value:" + cd.getValue());
-					cd.setValue(value);
-					cd.setCreateFile(true);
-					entry.setValue(cd);
-					System.out.println(" New Value:" + cd.getValue());
-				}
+	public HashMap<String, String>updatedFieldValue(HashMap<String, String> map, List<String> testCase) throws IOException {
+		
+		for(int i = 0; i < testCase.size(); i++){
+			String field = testCase.get(i).split("=")[0];
+			String value = testCase.get(i).split("=")[1].replaceAll("\"", "");
+			System.out.println("Found field \n" + " Field Name:" + field + "\n Old Value:" + map.get(field));
+			map.put(field, value);
+			System.out.println(" New Value:" + map.get(field));
 			}
-		}
 		return map;
 	}
-
+	
 	/**
 	 * Given the path of the base line file(flat file), the updated LinkedHashMap, and a file name format,
 	 * generate individual test files where the LinkedHashMap contain a value of createFile == true.
@@ -107,80 +91,46 @@ public class CreateTestFiles {
 	 * @param fileNameFormat, the expected file format.
 	 * @throws IOException
 	 */
-	public void outputTestFiles(String baseLineFilePath, HashMap<String, ColumnData> map, String fileNameFormat) throws IOException{
+	public void createOutput(String testCaseFilePath, String testDataPath, String delimiter, String fileNameFormat) throws IOException{
 		
-		File baseLineFile = new File(baseLineFilePath);
-		FileInputStream fips;
-		FileOutputStream fops1;
-		FileOutputStream fops2;
+		List<String> testCasesLists = null;
+		
+		BufferedReader br = new BufferedReader(new FileReader(testCaseFilePath));
+		String content;
+		String filePath = testCaseFilePath.substring(0, testCaseFilePath.lastIndexOf("/")) + "/";
 
-		for(Map.Entry<String, ColumnData> entry: map.entrySet()){
-			//String key = entry.getKey();
-			ColumnData cd = entry.getValue();
-			String fieldName = cd.getFieldName();
-			int index = cd.getIndex();
-			String value = cd.getValue();
-			boolean createFile = cd.getCreateFile();
-
-			String absolutePath = baseLineFile.getAbsolutePath();
-			String filePath = absolutePath.substring(0,absolutePath.lastIndexOf(baseLineFile.separator))+"/";
-
-			if(createFile == true) {
-				File tempFile = new File(filePath+"tempfile.dat");
-				File testFile = new File(filePath+fileNameFormat.replace("[FieldName]", fieldName).replace("[Value]", value));
-				fips = new FileInputStream(baseLineFile);
-				fops1 = new FileOutputStream(tempFile);
-				fops2 = new FileOutputStream(testFile);
-
-				System.out.println(tempFile.getAbsolutePath());
-				
-				byte[] buffer = new byte[1024];
-				int length;
-				while((length = fips.read(buffer)) > 0) {
-					fops1.write(buffer, 0, length);
-				}
-				
-				BufferedReader br1 = new BufferedReader(new FileReader(tempFile.getAbsolutePath()));
-				String parsedFields;
-				int line = 0;
-				String[] outputValues = null;
-				
-				while((parsedFields = br1.readLine()) != null) {
-					
-					if(line == 1) {
-						outputValues = parsedFields.split(delimiter);
-						outputValues[index] = value;
-					} else {
-					}
-					line++;
-				}
-
-				for(int i = 0; i < outputValues.length; i++){
-					String valueToWrite = outputValues[i] + "|";
-					fops1.write(valueToWrite.getBytes());
-				}
-				
-				BufferedReader br2 = new BufferedReader(new FileReader(tempFile.getAbsolutePath()));
-				
-				int lineCount=1;
-				String content;
-				while((content = br2.readLine()) != null){
-					if(lineCount != 2) {
-						content = content+"\n";
-						fops2.write(content.getBytes());
-					}
-					lineCount++;
-				}
-				fops1.close();
-				fops2.close();
-				br1.close();
-				br2.close();
-				System.out.println(tempFile.delete());
-				
+		while((content = br.readLine()) != null){
+			if(content.contains(",")){
+				testCasesLists = new ArrayList<String>(Arrays.asList(content.split(",")));
+			} else {
+				testCasesLists.add(content);
 			}
+			HashMap<String, String> map = parseFieldsUpdated(testDataPath, delimiter);
+			HashMap<String, String> updatedMap = updatedFieldValue(map, testCasesLists);
+			File testFile = new File(filePath + fileNameFormat.replace("[FieldName]", content.replace("\"", "")));
+			File tempFile = new File("temp.dat");
+			FileOutputStream fops1 = new FileOutputStream(testFile);
+			FileOutputStream fops2 = new FileOutputStream(tempFile);
+			
+			for(Map.Entry<String, String> entry: updatedMap.entrySet()){
+				String field = entry.getKey() + "|";
+				String value = entry.getValue()+ "|";
+				fops1.write(field.getBytes());
+				fops2.write(value.getBytes());
+			}
+			//fops1.flush();
+			//fops2.flush();
+			testCasesLists.clear();
+			BufferedReader br2 = new BufferedReader(new FileReader(tempFile));
+			String copyString = "\n" + br2.readLine();
+			fops1.write(copyString.getBytes());
+			fops1.close();
+			fops2.close();
+			br2.close();
+			tempFile.delete();
 		}
+		br.close();
 	}
-	
 	/**
 	 * Set the delimiter character
 	 * @param delimiter, the delimiter
@@ -201,8 +151,6 @@ public class CreateTestFiles {
 		CreateTestFiles ctf = new CreateTestFiles();
 		Time time = new Time();
 		String todaysDate = time.getTodaysDate("yyyyMMdd");
-		HashMap<String, ColumnData> parsedFields = ctf.parseFields("C:/Users/david_him/Documents/Projects/AARP/nuance.std.in.20161019David.dat", "\\|");
-		HashMap<String, ColumnData> updatedMap = ctf.updateFieldValue(parsedFields, "C:/Users/david_him/Documents/Projects/AARP/testCase.txt");
-		ctf.outputTestFiles("C:/Users/david_him/Documents/Projects/AARP/nuance.std.in.20161019David.dat", updatedMap, "nuance.std.in."+ todaysDate + "_[FieldName]_[Value].dat");
+		ctf.createOutput("C:/Users/david_him/Documents/Projects/AARP/testCase.txt", "C:/Users/david_him/Documents/Projects/AARP/nuance.std.in.20161019David.dat", "\\|", "nuance.std.in."+ todaysDate + "_[FieldName].dat");
 	}
 }

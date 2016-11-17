@@ -10,6 +10,8 @@ public class ConfigData {
 	private String value;
 	private int beginIndex;
 	private int endIndex;
+	private String header;
+	private String footer;
 	
 	/**
 	 * The constructor
@@ -23,6 +25,22 @@ public class ConfigData {
 		this.beginIndex = beginIndex;
 		this.endIndex = endIndex;
 		this.value = value;
+	}
+
+	public String getHeader() {
+		return header;
+	}
+
+	public void setHeader(String header) {
+		this.header = header;
+	}
+
+	public String getFooter() {
+		return footer;
+	}
+
+	public void setFooter(String footer) {
+		this.footer = footer;
 	}
 
 	/**
